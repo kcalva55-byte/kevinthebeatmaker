@@ -119,7 +119,7 @@ export default async function RootLayout({
 
   const publishedBeats =
     mapSupabaseBeatsToPlayer(data ?? []);
-console.log("SUPABASE BEATS:", publishedBeats);
+
   return (
     <html lang="es">
       <body
