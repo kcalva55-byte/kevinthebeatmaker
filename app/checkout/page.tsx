@@ -284,7 +284,7 @@ async function handlePaymentCompleted(
           </div>
 
           <Link
-            href="/beats"
+            href="/#beats"
             className="mt-8 inline-flex rounded-full bg-blue-600 px-7 py-3.5 font-black transition hover:bg-blue-500"
           >
             Volver a los beats
@@ -303,7 +303,7 @@ async function handlePaymentCompleted(
 
       <div className="relative mx-auto max-w-7xl">
         <Link
-          href="/beats"
+          href="/#beats"
           className="mb-8 inline-flex items-center gap-2 text-sm font-bold text-slate-400 transition hover:text-white"
         >
           <ArrowLeft size={17} />
@@ -340,7 +340,7 @@ async function handlePaymentCompleted(
             </p>
 
             <Link
-              href="/beats"
+              href="/#beats"
               className="mt-7 inline-flex rounded-full bg-blue-600 px-7 py-3.5 font-black transition hover:bg-blue-500"
             >
               Explorar beats
