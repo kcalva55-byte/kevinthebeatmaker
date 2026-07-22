@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+:root {
+  --background: #030712;
+  --foreground: #f8fafc;
+
+  --mood-primary: #2563eb;
+  --mood-secondary: #38bdf8;
+  --mood-ambient: #071b42;
+  --mood-glow: #1d4ed8;
+  --mood-particle: #60a5fa;
+  --mood-intensity: 0.55;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+
+  background: var(--background);
+  color: var(--foreground);
+
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+
+  transition:
+    background-color 800ms ease,
+    color 300ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--mood-primary);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030712;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--mood-primary);
+  border-radius: 999px;
+}
+
+/* Contenedor principal de todas las secciones */
+
+.container-custom {
+  width: min(calc(100% - 3rem), 1280px);
+  margin-inline: auto;
+}
+
+/* Clases del Mood Engine */
+
+.mood-text {
+  color: var(--mood-primary);
+  transition: color 800ms ease;
+}
+
+.mood-background {
+  background-color: var(--mood-primary);
+  transition: background-color 800ms ease;
+}
+
+.mood-border {
+  border-color: color-mix(
+    in srgb,
+    var(--mood-primary) 45%,
+    transparent
+  );
+
+  transition: border-color 800ms ease;
+}
+
+.mood-shadow {
+  box-shadow:
+    0 20px 70px
+    color-mix(
+      in srgb,
+      var(--mood-glow) 25%,
+      transparent
+    );
+
+  transition: box-shadow 800ms ease;
+}
+
+/* Rangos del reproductor */
+
+input[type="range"] {
+  accent-color: var(--mood-primary);
+}
+
+/* Accesibilidad */
+
+:focus-visible {
+  outline: 2px solid var(--mood-secondary);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .container-custom {
+    width: min(calc(100% - 2rem), 1280px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
