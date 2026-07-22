@@ -9,14 +9,11 @@ import {
   type ReactNode,
 } from "react";
 
-import {
-  beats as fallbackBeats,
-  type Beat,
-} from "../../data/beats";
+import type { Beat } from "../../data/beats";
 
 type MoodContextValue = {
   beats: Beat[];
-  activeBeat: Beat;
+  activeBeat: Beat | null;
   activeBeatIndex: number;
   isPlaying: boolean;
   setActiveBeatIndex: (index: number) => void;
@@ -38,10 +35,7 @@ export default function MoodProvider({
   children,
   initialBeats = [],
 }: MoodProviderProps) {
-  const beats =
-    initialBeats.length > 0
-      ? initialBeats
-      : fallbackBeats;
+  const beats = initialBeats;
 
   const [activeBeatIndex, setActiveBeatIndex] =
     useState(0);
@@ -50,9 +44,15 @@ export default function MoodProvider({
     useState(false);
 
   const activeBeat =
-    beats[activeBeatIndex] ?? beats[0];
+    beats[activeBeatIndex] ?? beats[0] ?? null;
 
   useEffect(() => {
+    if (beats.length === 0) {
+      setActiveBeatIndex(0);
+      setIsPlaying(false);
+      return;
+    }
+
     if (activeBeatIndex >= beats.length) {
       setActiveBeatIndex(0);
     }
@@ -67,6 +67,10 @@ export default function MoodProvider({
   };
 
   const nextBeat = () => {
+    if (beats.length === 0) {
+      return;
+    }
+
     setActiveBeatIndex((current) =>
       current >= beats.length - 1
         ? 0
@@ -75,6 +79,10 @@ export default function MoodProvider({
   };
 
   const previousBeat = () => {
+    if (beats.length === 0) {
+      return;
+    }
+
     setActiveBeatIndex((current) =>
       current === 0
         ? beats.length - 1
@@ -83,7 +91,9 @@ export default function MoodProvider({
   };
 
   useEffect(() => {
-    if (!activeBeat) return;
+    if (!activeBeat) {
+      return;
+    }
 
     const root = document.documentElement;
     const mood = activeBeat.mood;

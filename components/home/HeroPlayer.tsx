@@ -20,7 +20,9 @@ function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
 
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  return `${minutes}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
 }
 
 export default function HeroPlayer() {
@@ -29,25 +31,28 @@ export default function HeroPlayer() {
   const analyserRef = useRef<AnalyserNode | null>(null);
 
   const {
-  beats,
-  activeBeat,
-  activeBeatIndex,
-  isPlaying,
-  setActiveBeatIndex,
-  setIsPlaying,
-  nextBeat,
-  previousBeat,
-} = useMood();
+    beats,
+    activeBeat,
+    activeBeatIndex,
+    isPlaying,
+    setActiveBeatIndex,
+    setIsPlaying,
+    nextBeat,
+    previousBeat,
+  } = useMood();
 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
-  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [analyser, setAnalyser] =
+    useState<AnalyserNode | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
 
-    if (!audio) return;
+    if (!audio) {
+      return;
+    }
 
     audio.pause();
     audio.load();
@@ -67,7 +72,9 @@ export default function HeroPlayer() {
   const initializeAudioGraph = async () => {
     const audio = audioRef.current;
 
-    if (!audio) return;
+    if (!audio) {
+      return;
+    }
 
     if (!audioContextRef.current) {
       const AudioContextClass =
@@ -78,11 +85,15 @@ export default function HeroPlayer() {
           }
         ).webkitAudioContext;
 
-      if (!AudioContextClass) return;
+      if (!AudioContextClass) {
+        return;
+      }
 
       const audioContext = new AudioContextClass();
-      const source = audioContext.createMediaElementSource(audio);
-      const analyserNode = audioContext.createAnalyser();
+      const source =
+        audioContext.createMediaElementSource(audio);
+      const analyserNode =
+        audioContext.createAnalyser();
 
       analyserNode.fftSize = 128;
       analyserNode.smoothingTimeConstant = 0.82;
@@ -95,7 +106,10 @@ export default function HeroPlayer() {
       setAnalyser(analyserNode);
     }
 
-    if (audioContextRef.current.state === "suspended") {
+    if (
+      audioContextRef.current &&
+      audioContextRef.current.state === "suspended"
+    ) {
       await audioContextRef.current.resume();
     }
   };
@@ -103,7 +117,9 @@ export default function HeroPlayer() {
   const togglePlay = async () => {
     const audio = audioRef.current;
 
-    if (!audio) return;
+    if (!audio || !activeBeat) {
+      return;
+    }
 
     try {
       await initializeAudioGraph();
@@ -114,7 +130,11 @@ export default function HeroPlayer() {
         audio.pause();
       }
     } catch (error) {
-      console.error("No se pudo reproducir el beat:", error);
+      console.error(
+        "No se pudo reproducir el beat:",
+        error,
+      );
+
       setIsPlaying(false);
     }
   };
@@ -124,11 +144,32 @@ export default function HeroPlayer() {
   ) => {
     const newTime = Number(event.target.value);
 
-    if (!audioRef.current) return;
+    if (!audioRef.current) {
+      return;
+    }
 
     audioRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
+
+  if (!activeBeat) {
+    return (
+      <div className="mood-border mood-shadow relative overflow-hidden rounded-[2rem] border bg-[#06101f]/80 p-8 text-center backdrop-blur-2xl">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
+          <Play size={26} className="text-slate-500" />
+        </div>
+
+        <h3 className="mt-5 text-xl font-black text-white">
+          Próximamente nuevos beats
+        </h3>
+
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-400">
+          Actualmente no hay beats publicados. Muy pronto podrás escuchar
+          nuevas producciones de Kevin The Beatmaker.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="mood-border mood-shadow relative overflow-hidden rounded-[2rem] border bg-[#06101f]/80 p-4 backdrop-blur-2xl sm:p-5">
@@ -185,7 +226,11 @@ export default function HeroPlayer() {
             <button
               type="button"
               onClick={togglePlay}
-              aria-label={isPlaying ? "Pausar beat" : "Reproducir beat"}
+              aria-label={
+                isPlaying
+                  ? "Pausar beat"
+                  : "Reproducir beat"
+              }
               className="mood-background flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition hover:scale-105 active:scale-95"
             >
               {isPlaying ? (
@@ -208,7 +253,10 @@ export default function HeroPlayer() {
               <SkipForward size={20} fill="currentColor" />
             </button>
 
-            <Volume2 size={17} className="ml-auto text-slate-500" />
+            <Volume2
+              size={17}
+              className="ml-auto text-slate-500"
+            />
 
             <input
               type="range"
@@ -216,10 +264,14 @@ export default function HeroPlayer() {
               max={1}
               step={0.01}
               value={volume}
-              onChange={(event) => setVolume(Number(event.target.value))}
+              onChange={(event) =>
+                setVolume(Number(event.target.value))
+              }
               aria-label="Volumen"
               className="hidden w-20 cursor-pointer sm:block"
-              style={{ accentColor: activeBeat.color }}
+              style={{
+                accentColor: activeBeat.color,
+              }}
             />
           </div>
         </div>
@@ -239,30 +291,41 @@ export default function HeroPlayer() {
           min={0}
           max={duration || 0}
           step={0.01}
-          value={Math.min(currentTime, duration || 0)}
+          value={Math.min(
+            currentTime,
+            duration || 0,
+          )}
           onChange={handleProgressChange}
           aria-label="Progreso del beat"
           className="h-1.5 w-full cursor-pointer"
-          style={{ accentColor: activeBeat.color }}
+          style={{
+            accentColor: activeBeat.color,
+          }}
         />
 
         <div className="mt-1.5 flex justify-between text-[11px] text-slate-500">
           <span>{formatTime(currentTime)}</span>
+
           <span>
-            {duration > 0 ? formatTime(duration) : activeBeat.duration}
+            {duration > 0
+              ? formatTime(duration)
+              : activeBeat.duration}
           </span>
         </div>
       </div>
 
       <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1">
         {beats.map((beat, index) => {
-          const selected = index === activeBeatIndex;
+          const selected =
+            index === activeBeatIndex;
 
           return (
             <button
               type="button"
               key={beat.id}
-              onClick={() => setActiveBeatIndex(index)}
+              onClick={() =>
+                setActiveBeatIndex(index)
+              }
               className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition ${
                 selected
                   ? "border-white/20 bg-white/10 text-white"
