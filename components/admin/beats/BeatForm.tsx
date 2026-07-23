@@ -283,139 +283,219 @@ const [form, setForm] = useState<BeatFormState>(() => {
     return "";
   }
 
-  async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
-  ) {
-    event.preventDefault();
+async function handleSubmit(
+  event: FormEvent<HTMLFormElement>,
+) {
+  event.preventDefault();
 
-    const validationError = validateForm();
+  const validationError = validateForm();
 
-    if (validationError) {
-      setErrorMessage(validationError);
-      return;
+  if (validationError) {
+    setErrorMessage(validationError);
+    return;
+  }
+
+  setErrorMessage("");
+  setIsSubmitting(true);
+
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      throw userError;
     }
 
-    setErrorMessage("");
-    setIsSubmitting(true);
-
-    try {
-      const supabase = createClient();
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (!user) {
-        throw new Error(
-          "Tu sesión expiró. Inicia sesión nuevamente.",
-        );
-      }
-
-      let slugQuery = supabase
-  .from("beats")
-  .select("id")
-  .eq("slug", form.slug.trim());
-
-if (initialBeat) {
-  slugQuery = slugQuery.neq("id", initialBeat.id);
-}
-
-const {
-  data: existingBeat,
-  error: slugCheckError,
-} = await slugQuery.maybeSingle();
-
-      if (slugCheckError) {
-        throw slugCheckError;
-      }
-
-      if (existingBeat) {
-        throw new Error(
-          "Ya existe un beat con ese slug. Usa uno diferente.",
-        );
-      }
-
-      const beatPayload = {
-  title: form.title.trim(),
-  slug: form.slug.trim(),
-  genre: form.genre.trim(),
-  bpm: Number(form.bpm),
-  musical_key: form.musicalKey.trim(),
-  price: Number(form.price),
-  status: form.status,
-
-  description: form.description.trim() || null,
-  tags: parsedTags,
-  mood: form.mood.trim() || null,
-
-  duration_seconds: form.durationSeconds
-    ? Number(form.durationSeconds)
-    : null,
-
-  featured: form.featured,
-
-  preview_start: Number(form.previewStart || 0),
-
-  preview_end: form.previewEnd
-    ? Number(form.previewEnd)
-    : null,
-
-  cover_url: form.coverUrl,
-  audio_url: form.audioUrl,
-  wav_url: form.wavUrl || null,
-  stems_url: form.stemsUrl || null,
-
-  updated_by: user.id,
-  updated_at: new Date().toISOString(),
-};
-
-if (initialBeat) {
-  const { error: updateError } = await supabase
-    .from("beats")
-    .update(beatPayload)
-    .eq("id", initialBeat.id);
-
-  if (updateError) {
-    throw updateError;
-  }
-} else {
-const { error: insertError } = await supabase
-  .from("beats")
-  .insert({
-    ...beatPayload,
-    created_by: user.id,
-    plays: 0,
-  });
-
-if (insertError) {
-  console.error("INSERT ERROR:", insertError);
-
-  throw new Error(
-    `${insertError.message}
-Code: ${insertError.code}
-Details: ${insertError.details ?? "Sin detalles"}
-Hint: ${insertError.hint ?? "Sin sugerencias"}`
-  );
-}
-}
-
-      router.push("/admin/beats");
-      router.refresh();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "No fue posible guardar el beat.",
+    if (!user) {
+      throw new Error(
+        "Tu sesión expiró. Cierra sesión y vuelve a ingresar.",
       );
-    } finally {
-      setIsSubmitting(false);
     }
+
+    let slugQuery = supabase
+      .from("beats")
+      .select("id")
+      .eq("slug", form.slug.trim());
+
+    if (initialBeat) {
+      slugQuery = slugQuery.neq(
+        "id",
+        initialBeat.id,
+      );
+    }
+
+    const {
+      data: existingBeat,
+      error: slugCheckError,
+    } = await slugQuery.maybeSingle();
+
+    if (slugCheckError) {
+      throw slugCheckError;
+    }
+
+    if (existingBeat) {
+      throw new Error(
+        "Ya existe un beat con ese slug. Usa uno diferente.",
+      );
+    }
+
+    const beatPayload = {
+      title: form.title.trim(),
+      slug: form.slug.trim(),
+      genre: form.genre.trim(),
+      bpm: Number(form.bpm),
+      musical_key: form.musicalKey.trim(),
+      price: Number(form.price),
+      status: form.status,
+
+      description:
+        form.description.trim() || null,
+
+      tags: parsedTags,
+
+      mood:
+        form.mood.trim() || null,
+
+      duration_seconds: form.durationSeconds
+        ? Number(form.durationSeconds)
+        : null,
+
+      featured: form.featured,
+
+      preview_start: Number(
+        form.previewStart || 0,
+      ),
+
+      preview_end: form.previewEnd
+        ? Number(form.previewEnd)
+        : null,
+
+      cover_url: form.coverUrl,
+      audio_url: form.audioUrl,
+
+      wav_url:
+        form.wavUrl || null,
+
+      stems_url:
+        form.stemsUrl || null,
+
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (initialBeat) {
+      const {
+        data: updatedBeat,
+        error: updateError,
+      } = await supabase
+        .from("beats")
+        .update(beatPayload)
+        .eq("id", initialBeat.id)
+        .select("id")
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      if (!updatedBeat) {
+        throw new Error(
+          "Supabase no confirmó la actualización del beat.",
+        );
+      }
+    } else {
+      const {
+        data: insertedBeat,
+        error: insertError,
+      } = await supabase
+        .from("beats")
+        .insert({
+          ...beatPayload,
+
+          // La política RLS exige que este
+          // valor coincida con auth.uid().
+          created_by: user.id,
+
+          plays: 0,
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        console.error(
+          "Error completo al insertar el beat:",
+          insertError,
+        );
+
+        throw insertError;
+      }
+
+      if (!insertedBeat) {
+        throw new Error(
+          "Supabase no confirmó la creación del beat.",
+        );
+      }
+    }
+
+    router.push("/admin/beats");
+    router.refresh();
+  } catch (error: unknown) {
+    console.error(
+      "No se pudo guardar el beat:",
+      error,
+    );
+
+    let message =
+      "No fue posible guardar el beat.";
+
+    if (
+      typeof error === "object" &&
+      error !== null
+    ) {
+      const supabaseError = error as {
+        message?: unknown;
+        details?: unknown;
+        hint?: unknown;
+        code?: unknown;
+      };
+
+      const errorParts = [
+        typeof supabaseError.message === "string"
+          ? supabaseError.message
+          : null,
+
+        typeof supabaseError.details === "string" &&
+        supabaseError.details
+          ? `Detalles: ${supabaseError.details}`
+          : null,
+
+        typeof supabaseError.hint === "string" &&
+        supabaseError.hint
+          ? `Sugerencia: ${supabaseError.hint}`
+          : null,
+
+        typeof supabaseError.code === "string" &&
+        supabaseError.code
+          ? `Código: ${supabaseError.code}`
+          : null,
+      ].filter(Boolean);
+
+      if (errorParts.length > 0) {
+        message = errorParts.join("\n");
+      }
+    } else if (typeof error === "string") {
+      message = error;
+    }
+
+    setErrorMessage(message);
+  } finally {
+    setIsSubmitting(false);
   }
+}
 
   return (
     <div className="mx-auto w-full max-w-[1200px]">
