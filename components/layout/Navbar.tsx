@@ -1,24 +1,31 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-const links = [
-  { label: "Inicio", href: "#inicio" },
-  { label: "Beats", href: "#beats" },
-  { label: "Servicios", href: "#servicios" },
-  { label: "Producciones", href: "#producciones" },
-  { label: "Contacto", href: "#contacto" },
-];
-
 export default function Navbar() {
+  const pathname = usePathname();
+
   const previousScroll = useRef(0);
 
   const [visible, setVisible] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const section = (id: string) =>
+    pathname === "/" ? `#${id}` : `/#${id}`;
+
+  const links = [
+    { label: "Inicio", href: section("inicio") },
+    { label: "Beats", href: section("beats") },
+    { label: "Servicios", href: section("servicios") },
+    { label: "Producciones", href: section("producciones") },
+    { label: "Contacto", href: section("contacto") },
+  ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,9 +51,8 @@ export default function Navbar() {
       passive: true,
     });
 
-    return () => {
+    return () =>
       window.removeEventListener("scroll", handleScroll);
-    };
   }, [menuOpen]);
 
   useEffect(() => {
@@ -59,6 +65,8 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Mantén TODO el resto del componente exactamente igual */}
+
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{
@@ -80,8 +88,8 @@ export default function Navbar() {
               : "container-custom h-20"
           }`}
         >
-          <a
-            href="#inicio"
+          <Link
+            href={section("inicio")}
             aria-label="Kevin The Beatmaker - Inicio"
             className="flex items-center gap-3"
           >
@@ -120,11 +128,10 @@ export default function Navbar() {
                 KTB Studio
               </p>
             </div>
-          </a>
-
+          </Link>
           <nav className="hidden items-center gap-7 lg:flex">
             {links.map((link) => (
-              <a
+              <Link
                 key={link.href}
                 href={link.href}
                 className="group relative py-2 text-sm font-medium text-slate-300 transition hover:text-white"
@@ -132,12 +139,12 @@ export default function Navbar() {
                 {link.label}
 
                 <span className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-gradient-to-r from-blue-500 to-cyan-300 transition-transform duration-300 group-hover:scale-x-100" />
-              </a>
+              </Link>
             ))}
           </nav>
 
-          <a
-            href="#contacto"
+          <Link
+            href={section("contacto")}
             className={`hidden rounded-full bg-blue-600 font-semibold text-white shadow-lg shadow-blue-600/25 transition duration-300 hover:-translate-y-0.5 hover:bg-blue-500 lg:block ${
               scrolled
                 ? "px-5 py-2.5 text-xs"
@@ -145,7 +152,7 @@ export default function Navbar() {
             }`}
           >
             Trabajemos juntos
-          </a>
+          </Link>
 
           <button
             type="button"
@@ -216,32 +223,38 @@ export default function Navbar() {
             </motion.div>
 
             <nav className="flex flex-col items-center gap-8 pt-20">
-              {links.map((link, index) => (
-                <motion.a
-                  key={link.href}
-                  href={link.href}
-                  initial={{ opacity: 0, y: 25 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    delay: 0.08 + index * 0.07,
-                  }}
-                  onClick={() => setMenuOpen(false)}
-                  className="text-3xl font-bold transition hover:text-blue-400"
-                >
-                  {link.label}
-                </motion.a>
-              ))}
+{links.map((link, index) => (
+  <motion.div
+    key={link.href}
+    initial={{ opacity: 0, y: 25 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{
+      delay: 0.08 + index * 0.07,
+    }}
+  >
+    <Link
+      href={link.href}
+      onClick={() => setMenuOpen(false)}
+      className="text-3xl font-bold transition hover:text-blue-400"
+    >
+      {link.label}
+    </Link>
+  </motion.div>
+))}
 
-              <motion.a
-                href="#contacto"
-                initial={{ opacity: 0, y: 25 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.48 }}
-                onClick={() => setMenuOpen(false)}
-                className="mt-4 rounded-full bg-blue-600 px-8 py-4 font-semibold shadow-lg shadow-blue-600/30"
-              >
-                Trabajemos juntos
-              </motion.a>
+              <motion.div
+  initial={{ opacity: 0, y: 25 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.48 }}
+>
+  <Link
+    href={section("contacto")}
+    onClick={() => setMenuOpen(false)}
+    className="mt-4 inline-block rounded-full bg-blue-600 px-8 py-4 font-semibold shadow-lg shadow-blue-600/30"
+  >
+    Trabajemos juntos
+  </Link>
+</motion.div>
             </nav>
 
             <div className="pointer-events-none absolute bottom-[-120px] left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-600/20 blur-[100px]" />
