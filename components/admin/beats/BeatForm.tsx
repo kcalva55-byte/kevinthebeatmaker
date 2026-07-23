@@ -384,16 +384,24 @@ if (initialBeat) {
     throw updateError;
   }
 } else {
-  const { error: insertError } = await supabase
-    .from("beats")
-    .insert({
-      ...beatPayload,
-      plays: 0,
-    });
+const { error: insertError } = await supabase
+  .from("beats")
+  .insert({
+    ...beatPayload,
+    created_by: user.id,
+    plays: 0,
+  });
 
-  if (insertError) {
-    throw insertError;
-  }
+if (insertError) {
+  console.error("INSERT ERROR:", insertError);
+
+  throw new Error(
+    `${insertError.message}
+Code: ${insertError.code}
+Details: ${insertError.details ?? "Sin detalles"}
+Hint: ${insertError.hint ?? "Sin sugerencias"}`
+  );
+}
 }
 
       router.push("/admin/beats");
