@@ -8,13 +8,12 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { AudioWaveform, Play, Sparkles } from "lucide-react";
+import { Play, Sparkles } from "lucide-react";
 import type { MouseEvent } from "react";
 
 import BackgroundGlow from "../ui/BackgroundGlow";
 import Button from "../ui/Button";
 import HeroParticles from "./HeroParticles";
-import HeroPlayer from "./HeroPlayer";
 import HeroVideo from "./HeroVideo";
 
 export default function Hero() {
@@ -107,10 +106,6 @@ export default function Hero() {
             </span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-            Producción musical, mezcla, mastering y grabación de voces.
-            Especializado en Reggaetón, Trap, Detroit y Afrobeat.
-          </p>
 
           <div className="mt-9 flex flex-wrap gap-4">
             <Button
@@ -131,9 +126,7 @@ export default function Hero() {
             </Button>
           </div>
 
-          <div className="mt-10 max-w-2xl">
-            <HeroPlayer />
-          </div>
+
         </motion.div>
 
         <motion.div
@@ -166,21 +159,8 @@ export default function Hero() {
 
               <div className="absolute inset-0 bg-gradient-to-r from-blue-950/15 via-transparent to-cyan-950/10" />
 
-              <div className="absolute inset-x-0 bottom-0 p-7 sm:p-9">
-                <div className="flex items-center gap-3 text-blue-200">
-                  <AudioWaveform size={22} />
+<div className="absolute inset-0" />
 
-                  <span className="text-xs uppercase tracking-[0.28em]">
-                    Sonido original
-                  </span>
-                </div>
-
-                <h2 className="mt-4 max-w-md text-2xl font-black leading-tight sm:text-3xl">
-                  Creando música con identidad, potencia y calidad profesional.
-                </h2>
-
-                <div className="mt-6 h-px bg-gradient-to-r from-blue-500 via-cyan-400/50 to-transparent" />
-              </div>
             </div>
           </div>
         </motion.div>

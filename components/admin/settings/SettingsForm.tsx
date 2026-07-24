@@ -31,7 +31,7 @@ export interface SiteSettings {
   instagram_url: string | null;
   youtube_url: string | null;
   tiktok_url: string | null;
-  facebook_url: string | null;
+  spotify_url: string | null;
 
   currency: string;
   country: string;
@@ -163,8 +163,8 @@ export default function SettingsForm({
               settings.tiktok_url || "",
             ),
 
-            facebook_url: normalizeNullable(
-              settings.facebook_url || "",
+            spotify_url: normalizeNullable(
+              settings.spotify_url || "",
             ),
 
             currency: settings.currency
@@ -636,17 +636,17 @@ export default function SettingsForm({
                 </label>
 
                 <label className="text-sm text-white/55">
-                  Facebook
+                  Spotify
                   <input
-                    value={settings.facebook_url || ""}
+                    value={settings.spotify_url || ""}
                     onChange={(event) =>
                       updateField(
-                        "facebook_url",
+                        "spotify_url",
                         event.target.value,
                       )
                     }
                     className={inputClasses}
-                    placeholder="https://facebook.com/..."
+                    placeholder="https://spotify.com/..."
                   />
                 </label>
               </div>

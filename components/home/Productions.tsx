@@ -57,14 +57,11 @@ export default function Productions() {
             Producciones
           </span>
 
-          <h2 className="mt-5 text-4xl font-bold text-white sm:text-5xl">
-            Trabajos reales
-          </h2>
 
-          <p className="mx-auto mt-6 max-w-3xl leading-8 text-white/60">
-            Estas son algunas de las producciones en las que participé como
-            productor musical, ingeniero de grabación, mezcla y mastering.
-          </p>
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-white/70 sm:text-xl">
+  Estas son algunas de las producciones en las que participé como productor
+  musical, ingeniero de grabación, mezcla y mastering.
+</p>
         </div>
 
         <div className="mt-12 flex flex-wrap justify-center gap-3">

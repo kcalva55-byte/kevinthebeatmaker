@@ -20,9 +20,9 @@ export default function FeaturedBeats() {
       <div className="container-custom relative z-10">
         <Reveal>
           <SectionTitle
-            subtitle="Beats destacados"
-            title="Escucha mi sonido"
-          />
+  subtitle="Catálogo"
+  title="Beats Disponibles"
+/>
         </Reveal>
 
         <Reveal delay={0.15}>

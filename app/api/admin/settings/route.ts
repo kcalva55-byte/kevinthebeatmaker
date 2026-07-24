@@ -16,7 +16,7 @@ interface SettingsPayload {
   instagram_url?: unknown;
   youtube_url?: unknown;
   tiktok_url?: unknown;
-  facebook_url?: unknown;
+  spotify_url?: unknown;
 
   currency?: unknown;
   country?: unknown;
@@ -211,8 +211,8 @@ export async function PUT(request: Request) {
         body.tiktok_url,
       ),
 
-      facebook_url: nullableString(
-        body.facebook_url,
+      spotify_url: nullableString(
+        body.spotify_url,
       ),
 
       currency,
