@@ -9,17 +9,23 @@ export default function HeroVideo() {
         muted
         loop
         playsInline
-        preload="metadata"
-        className="h-full w-full object-cover opacity-30"
+        preload="auto"
+        className="h-full w-full object-cover opacity-65"
       >
-        <source src="/videos/hero-studio.mp4" type="video/mp4" />
+        <source
+          src="/videos/hero-studio.mp4"
+          type="video/mp4"
+        />
       </video>
 
-      <div className="absolute inset-0 bg-slate-950/55" />
+      {/* Capa oscura principal */}
+      <div className="absolute inset-0 bg-slate-950/30" />
 
-      <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/35" />
+      {/* Degradado lateral para mejorar la lectura del texto */}
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-950/20 to-transparent" />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/40" />
+      {/* Degradado superior e inferior */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-slate-950/20" />
     </div>
   );
 }

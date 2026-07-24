@@ -32,11 +32,18 @@ type BeatLicense = {
   description: string | null;
   price: number | string;
   audio_format: string;
+
   distribution_limit: number | null;
   streams_limit: number | null;
+
+  digital_distribution_allowed: boolean;
+  monetization_allowed: boolean;
+  project_files_included: boolean;
+
   music_video_allowed: boolean;
   radio_allowed: boolean;
   paid_performances_allowed: boolean;
+
   exclusive: boolean;
   position: number;
 };
@@ -57,31 +64,26 @@ type PublicBeat = {
 };
 
 const beatSelection = `
-  id,
-  title,
-  slug,
-  genre,
-  bpm,
-  musical_key,
-  price,
-  plays,
-  cover_url,
-  audio_url,
-  created_at,
   beat_licenses (
-    id,
-    name,
-    description,
-    price,
-    audio_format,
-    distribution_limit,
-    streams_limit,
-    music_video_allowed,
-    radio_allowed,
-    paid_performances_allowed,
-    exclusive,
-    position
-  )
+  id,
+  name,
+  description,
+  price,
+  audio_format,
+  distribution_limit,
+  streams_limit,
+
+  digital_distribution_allowed,
+  monetization_allowed,
+  project_files_included,
+
+  music_video_allowed,
+  radio_allowed,
+  paid_performances_allowed,
+
+  exclusive,
+  position
+)
 `;
 
 const relatedBeatSelection = `
