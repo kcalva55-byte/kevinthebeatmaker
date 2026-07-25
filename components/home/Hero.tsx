@@ -147,7 +147,7 @@ export default function Hero() {
           <div className="relative aspect-[4/5] overflow-hidden rounded-[2.75rem] border border-white/10 bg-white/[0.05] p-3 shadow-[0_35px_100px_rgba(0,0,0,.6)] backdrop-blur-xl">
             <div className="relative h-full overflow-hidden rounded-[2.25rem] border border-blue-400/20 bg-slate-950">
               <Image
-                src="/images/kevin-studio.png"
+                src="/images/kevin-studio.webp"
                 alt="Kevin The Beatmaker trabajando en su estudio"
                 fill
                 priority

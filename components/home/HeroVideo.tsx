@@ -4,14 +4,14 @@ export default function HeroVideo() {
       aria-hidden="true"
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        className="h-full w-full object-cover opacity-65"
-      >
+<video
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="metadata"
+  className="h-full w-full object-cover opacity-65"
+>
         <source
           src="/videos/hero-studio.mp4"
           type="video/mp4"
