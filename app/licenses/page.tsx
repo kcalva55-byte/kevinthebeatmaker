@@ -32,34 +32,51 @@ interface SiteSettings {
 async function getLicenses() {
   const supabase = await createClient();
 
-const { data, error } = await supabase
-  .from("beat_licenses")
-  .select(
-    `
-      id,
-      name,
-      description,
-      price,
-      audio_format,
-      distribution_limit,
-      streams_limit,
-      digital_distribution_allowed,
-      monetization_allowed,
-      project_files_included,
-      music_video_allowed,
-      radio_allowed,
-      paid_performances_allowed,
-      exclusive
-    `,
-  )
-  .order("price", { ascending: true });
+  const { data, error } = await supabase
+    .from("beat_licenses")
+    .select(
+      `
+        id,
+        name,
+        description,
+        price,
+        audio_format,
+        distribution_limit,
+        streams_limit,
+        digital_distribution_allowed,
+        monetization_allowed,
+        project_files_included,
+        music_video_allowed,
+        radio_allowed,
+        paid_performances_allowed,
+        exclusive
+      `,
+    )
+    .order("price", { ascending: true });
 
   if (error) {
-    console.error("Error loading licenses:", error.message);
+    console.error(
+      "Error loading licenses:",
+      error.message,
+    );
+
     return [];
   }
 
-  return (data ?? []) as PublicLicense[];
+  const licenses =
+    (data ?? []) as PublicLicense[];
+
+  const uniqueLicenses = licenses.filter(
+    (license, index, list) =>
+      index ===
+      list.findIndex(
+        (item) =>
+          item.name.trim().toLowerCase() ===
+          license.name.trim().toLowerCase(),
+      ),
+  );
+
+  return uniqueLicenses;
 }
 
 async function getSiteSettings() {
