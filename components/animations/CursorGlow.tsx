@@ -3,48 +3,103 @@
 import {
   motion,
   useMotionValue,
+  useReducedMotion,
   useSpring,
 } from "framer-motion";
 import { useEffect, useState } from "react";
 
 export default function CursorGlow() {
+  const shouldReduceMotion = useReducedMotion();
   const [enabled, setEnabled] = useState(false);
 
   const cursorX = useMotionValue(-200);
   const cursorY = useMotionValue(-200);
 
   const smoothX = useSpring(cursorX, {
-    stiffness: 250,
-    damping: 28,
-    mass: 0.4,
+    stiffness: 220,
+    damping: 30,
+    mass: 0.45,
   });
 
   const smoothY = useSpring(cursorY, {
-    stiffness: 250,
-    damping: 28,
-    mass: 0.4,
+    stiffness: 220,
+    damping: 30,
+    mass: 0.45,
   });
 
   useEffect(() => {
-    const supportsMouse = window.matchMedia("(pointer: fine)").matches;
+    const mediaQuery = window.matchMedia(
+      "(min-width: 1024px) and (pointer: fine) and (hover: hover)",
+    );
 
-    setEnabled(supportsMouse);
+    let animationFrame = 0;
+    let latestX = -200;
+    let latestY = -200;
 
-    if (!supportsMouse) return;
-
-    const handleMouseMove = (event: globalThis.MouseEvent) => {
-      cursorX.set(event.clientX);
-      cursorY.set(event.clientY);
+    const updateEnabledState = () => {
+      setEnabled(
+        mediaQuery.matches && !shouldReduceMotion,
+      );
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
+    const handlePointerMove = (
+      event: PointerEvent,
+    ) => {
+      latestX = event.clientX;
+      latestY = event.clientY;
+
+      if (animationFrame) {
+        return;
+      }
+
+      animationFrame = window.requestAnimationFrame(
+        () => {
+          cursorX.set(latestX);
+          cursorY.set(latestY);
+          animationFrame = 0;
+        },
+      );
+    };
+
+    updateEnabledState();
+
+    mediaQuery.addEventListener(
+      "change",
+      updateEnabledState,
+    );
+
+    if (mediaQuery.matches && !shouldReduceMotion) {
+      window.addEventListener(
+        "pointermove",
+        handlePointerMove,
+        { passive: true },
+      );
+    }
 
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, [cursorX, cursorY]);
+      mediaQuery.removeEventListener(
+        "change",
+        updateEnabledState,
+      );
 
-  if (!enabled) return null;
+      window.removeEventListener(
+        "pointermove",
+        handlePointerMove,
+      );
+
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [
+    cursorX,
+    cursorY,
+    shouldReduceMotion,
+  ]);
+
+  if (!enabled) {
+    return null;
+  }
 
   return (
     <motion.div
@@ -53,9 +108,10 @@ export default function CursorGlow() {
         x: smoothX,
         y: smoothY,
         backgroundColor: "var(--mood-primary)",
-        opacity: "calc(var(--mood-intensity) * 0.16)",
+        opacity:
+          "calc(var(--mood-intensity) * 0.13)",
       }}
-      className="pointer-events-none fixed left-0 top-0 z-[999] h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[65px] transition-colors duration-700"
+      className="pointer-events-none fixed left-0 top-0 z-[999] h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full blur-[58px]"
     />
   );
 }

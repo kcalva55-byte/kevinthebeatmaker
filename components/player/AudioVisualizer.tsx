@@ -15,119 +15,251 @@ export default function AudioVisualizer({
   color,
   className = "",
 }: AudioVisualizerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef =
+    useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
 
-    if (!canvas) return;
+    if (!canvas) {
+      return;
+    }
 
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext("2d", {
+      alpha: true,
+    });
 
-    if (!context) return;
+    if (!context) {
+      return;
+    }
+
+    const isMobile = window.matchMedia(
+      "(max-width: 768px), (pointer: coarse)",
+    ).matches;
+
+    const targetFrameInterval = isMobile
+      ? 1000 / 18
+      : 1000 / 30;
+
+    const barCount = isMobile ? 24 : 36;
+    const gap = isMobile ? 2 : 3;
 
     let animationFrame = 0;
+    let lastFrameTime = 0;
+    let isVisible = true;
 
     const resizeCanvas = () => {
-      const pixelRatio = window.devicePixelRatio || 1;
-      const bounds = canvas.getBoundingClientRect();
+      const bounds =
+        canvas.getBoundingClientRect();
 
-      canvas.width = Math.max(1, Math.floor(bounds.width * pixelRatio));
-      canvas.height = Math.max(1, Math.floor(bounds.height * pixelRatio));
+      const logicalWidth = Math.max(
+        1,
+        Math.floor(bounds.width),
+      );
 
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      const logicalHeight = Math.max(
+        1,
+        Math.floor(bounds.height),
+      );
+
+      const pixelRatio = Math.min(
+        window.devicePixelRatio || 1,
+        isMobile ? 1 : 1.5,
+      );
+
+      canvas.width = Math.max(
+        1,
+        Math.floor(logicalWidth * pixelRatio),
+      );
+
+      canvas.height = Math.max(
+        1,
+        Math.floor(logicalHeight * pixelRatio),
+      );
+
+      context.setTransform(
+        pixelRatio,
+        0,
+        0,
+        pixelRatio,
+        0,
+        0,
+      );
     };
-
-    resizeCanvas();
-
-    const resizeObserver = new ResizeObserver(resizeCanvas);
-    resizeObserver.observe(canvas);
 
     const drawIdleBars = () => {
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
-      const barCount = 40;
-      const gap = 3;
-      const barWidth = Math.max(2, (width - gap * (barCount - 1)) / barCount);
 
       context.clearRect(0, 0, width, height);
+      context.shadowBlur = 0;
+      context.fillStyle = `${color}48`;
 
-      for (let index = 0; index < barCount; index += 1) {
-        const wave = Math.sin(index * 0.55) * 0.5 + 0.5;
-        const barHeight = 4 + wave * 9;
+      const barWidth = Math.max(
+        2,
+        (width - gap * (barCount - 1)) /
+          barCount,
+      );
+
+      for (
+        let index = 0;
+        index < barCount;
+        index += 1
+      ) {
+        const wave =
+          Math.sin(index * 0.58) * 0.5 + 0.5;
+
+        const barHeight = 4 + wave * 8;
         const x = index * (barWidth + gap);
         const y = (height - barHeight) / 2;
 
-        context.fillStyle = `${color}55`;
         context.beginPath();
-        context.roundRect(x, y, barWidth, barHeight, barWidth / 2);
+        context.roundRect(
+          x,
+          y,
+          barWidth,
+          barHeight,
+          barWidth / 2,
+        );
         context.fill();
       }
     };
+
+    resizeCanvas();
+
+    const resizeObserver = new ResizeObserver(
+      () => {
+        resizeCanvas();
+        drawIdleBars();
+      },
+    );
+
+    resizeObserver.observe(canvas);
+
+    const intersectionObserver =
+      new IntersectionObserver(
+        ([entry]) => {
+          isVisible = entry.isIntersecting;
+        },
+        {
+          rootMargin: "120px",
+          threshold: 0,
+        },
+      );
+
+    intersectionObserver.observe(canvas);
 
     if (!analyser || !isPlaying) {
       drawIdleBars();
 
       return () => {
         resizeObserver.disconnect();
+        intersectionObserver.disconnect();
       };
     }
 
-    analyser.fftSize = 128;
+    analyser.fftSize = isMobile ? 64 : 128;
     analyser.smoothingTimeConstant = 0.82;
 
-    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+    const frequencyData = new Uint8Array(
+      analyser.frequencyBinCount,
+    );
 
-    const draw = () => {
+    const draw = (time: number) => {
+      animationFrame =
+        window.requestAnimationFrame(draw);
+
+      if (
+        document.hidden ||
+        !isVisible ||
+        time - lastFrameTime <
+          targetFrameInterval
+      ) {
+        return;
+      }
+
+      lastFrameTime = time;
+
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 
-      analyser.getByteFrequencyData(frequencyData);
+      analyser.getByteFrequencyData(
+        frequencyData,
+      );
 
       context.clearRect(0, 0, width, height);
 
-      const barCount = Math.min(48, frequencyData.length);
-      const gap = 3;
-      const barWidth = Math.max(2, (width - gap * (barCount - 1)) / barCount);
+      const barWidth = Math.max(
+        2,
+        (width - gap * (barCount - 1)) /
+          barCount,
+      );
 
-      for (let index = 0; index < barCount; index += 1) {
-        const sourceIndex = Math.floor(
-          (index / barCount) * frequencyData.length * 0.72,
+      const gradient =
+        context.createLinearGradient(
+          0,
+          height,
+          0,
+          0,
         );
 
-        const normalizedValue = frequencyData[sourceIndex] / 255;
-        const minimumHeight = 4;
+      gradient.addColorStop(0, color);
+      gradient.addColorStop(0.7, color);
+      gradient.addColorStop(1, "#a5f3fc");
+
+      context.fillStyle = gradient;
+      context.shadowColor = color;
+      context.shadowBlur = isMobile ? 0 : 5;
+
+      for (
+        let index = 0;
+        index < barCount;
+        index += 1
+      ) {
+        const sourceIndex = Math.min(
+          frequencyData.length - 1,
+          Math.floor(
+            (index / barCount) *
+              frequencyData.length *
+              0.72,
+          ),
+        );
+
+        const normalizedValue =
+          frequencyData[sourceIndex] / 255;
+
         const barHeight = Math.max(
-          minimumHeight,
-          normalizedValue * height * 0.9,
+          4,
+          normalizedValue * height * 0.86,
         );
 
         const x = index * (barWidth + gap);
         const y = (height - barHeight) / 2;
 
-        const gradient = context.createLinearGradient(0, y + barHeight, 0, y);
-        gradient.addColorStop(0, color);
-        gradient.addColorStop(0.55, color);
-        gradient.addColorStop(1, "#a5f3fc");
-
-        context.fillStyle = gradient;
-        context.shadowColor = color;
-        context.shadowBlur = normalizedValue > 0.5 ? 12 : 4;
-
         context.beginPath();
-        context.roundRect(x, y, barWidth, barHeight, barWidth / 2);
+        context.roundRect(
+          x,
+          y,
+          barWidth,
+          barHeight,
+          barWidth / 2,
+        );
         context.fill();
       }
 
       context.shadowBlur = 0;
-      animationFrame = requestAnimationFrame(draw);
     };
 
-    draw();
+    animationFrame =
+      window.requestAnimationFrame(draw);
 
     return () => {
-      cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(
+        animationFrame,
+      );
+
       resizeObserver.disconnect();
+      intersectionObserver.disconnect();
     };
   }, [analyser, color, isPlaying]);
 

@@ -1,6 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+} from "framer-motion";
 import type { ReactNode } from "react";
 
 type RevealProps = {
@@ -17,9 +20,11 @@ export default function Reveal({
   className,
   delay = 0,
   direction = "up",
-  distance = 45,
+  distance = 32,
   once = true,
 }: RevealProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   const initialPosition = {
     up: { x: 0, y: distance },
     down: { x: 0, y: -distance },
@@ -29,10 +34,14 @@ export default function Reveal({
 
   return (
     <motion.div
-      initial={{
-        opacity: 0,
-        ...initialPosition[direction],
-      }}
+      initial={
+        shouldReduceMotion
+          ? false
+          : {
+              opacity: 0,
+              ...initialPosition[direction],
+            }
+      }
       whileInView={{
         opacity: 1,
         x: 0,
@@ -40,14 +49,22 @@ export default function Reveal({
       }}
       viewport={{
         once,
-        amount: 0.2,
+        amount: 0.12,
+        margin: "0px 0px -8% 0px",
       }}
       transition={{
-        duration: 0.75,
-        delay,
+        duration: shouldReduceMotion
+          ? 0
+          : 0.48,
+        delay: shouldReduceMotion ? 0 : delay,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className={className}
+      className={[
+        "mobile-reveal",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       {children}
     </motion.div>
