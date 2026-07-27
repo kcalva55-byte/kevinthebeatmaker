@@ -62,7 +62,14 @@ const beatStyles: Record<string, BeatVisualStyle> = {
   },
 };
 
-function normalizeGenre(genre: string) {
+function normalizeGenre(genre: unknown) {
+  if (
+    typeof genre !== "string" ||
+    !genre.trim()
+  ) {
+    return "";
+  }
+
   return genre
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")

@@ -48,6 +48,32 @@ type BeatLicense = {
   position: number;
 };
 
+type LicenseCode =
+  | "basic"
+  | "premium"
+  | "exclusive";
+
+type LicenseTemplate = {
+  code: LicenseCode;
+  name: string;
+  description: string | null;
+  audio_format: string;
+
+  distribution_limit: number | null;
+  streams_limit: number | null;
+
+  digital_distribution_allowed: boolean;
+  monetization_allowed: boolean;
+  project_files_included: boolean;
+
+  music_video_allowed: boolean;
+  radio_allowed: boolean;
+  paid_performances_allowed: boolean;
+
+  exclusive: boolean;
+  sort_order: number;
+};
+
 type PublicBeat = {
   id: string;
   title: string;
@@ -64,26 +90,34 @@ type PublicBeat = {
 };
 
 const beatSelection = `
-  beat_licenses (
   id,
-  name,
-  description,
+  title,
+  slug,
+  genre,
+  bpm,
+  musical_key,
   price,
-  audio_format,
-  distribution_limit,
-  streams_limit,
-
-  digital_distribution_allowed,
-  monetization_allowed,
-  project_files_included,
-
-  music_video_allowed,
-  radio_allowed,
-  paid_performances_allowed,
-
-  exclusive,
-  position
-)
+  plays,
+  cover_url,
+  audio_url,
+  created_at,
+  beat_licenses (
+    id,
+    name,
+    description,
+    price,
+    audio_format,
+    distribution_limit,
+    streams_limit,
+    digital_distribution_allowed,
+    monetization_allowed,
+    project_files_included,
+    music_video_allowed,
+    radio_allowed,
+    paid_performances_allowed,
+    exclusive,
+    position
+  )
 `;
 
 const relatedBeatSelection = `
@@ -97,12 +131,23 @@ const relatedBeatSelection = `
   cover_url
 `;
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
+function isUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
   );
 }
-function createSlug(value: string) {
+
+function createSlug(value: unknown): string {
+  if (
+    typeof value !== "string" ||
+    !value.trim()
+  ) {
+    return "";
+  }
+
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -111,21 +156,170 @@ function createSlug(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+function isValidBeat(
+  value: unknown,
+): value is PublicBeat {
+  if (
+    !value ||
+    typeof value !== "object"
+  ) {
+    return false;
+  }
+
+  const beat = value as Partial<PublicBeat>;
+
+  return (
+    isUuid(beat.id) &&
+    typeof beat.title === "string" &&
+    beat.title.trim().length > 0 &&
+    typeof beat.genre === "string" &&
+    beat.genre.trim().length > 0
+  );
+}
+
+function normalizeBeatResult(
+  data: unknown,
+): PublicBeat | null {
+  const candidate = Array.isArray(data)
+    ? data[0]
+    : data;
+
+  if (!isValidBeat(candidate)) {
+    if (candidate) {
+      console.error(
+        "Supabase devolvió un beat incompleto:",
+        candidate,
+      );
+    }
+
+    return null;
+  }
+
+  return {
+    id: candidate.id,
+    title: candidate.title,
+
+    slug:
+      typeof candidate.slug === "string"
+        ? candidate.slug
+        : null,
+
+    genre: candidate.genre,
+    bpm: candidate.bpm ?? null,
+
+    musical_key:
+      typeof candidate.musical_key === "string"
+        ? candidate.musical_key
+        : null,
+
+    price: candidate.price ?? null,
+    plays: Number(candidate.plays) || 0,
+
+    cover_url:
+      typeof candidate.cover_url === "string"
+        ? candidate.cover_url
+        : null,
+
+    audio_url:
+      typeof candidate.audio_url === "string"
+        ? candidate.audio_url
+        : null,
+
+    created_at:
+      typeof candidate.created_at === "string"
+        ? candidate.created_at
+        : null,
+
+    beat_licenses: Array.isArray(
+      candidate.beat_licenses,
+    )
+      ? candidate.beat_licenses
+      : [],
+  };
+}
+
+function getLicenseCode(
+  name: string,
+  exclusive: boolean,
+): LicenseCode {
+  const normalizedName = name
+    .trim()
+    .toLowerCase();
+
+  if (
+    exclusive ||
+    normalizedName.includes("exclus")
+  ) {
+    return "exclusive";
+  }
+
+  if (normalizedName.includes("premium")) {
+    return "premium";
+  }
+
+  return "basic";
+}
+
+async function getLicenseTemplates(): Promise<
+  LicenseTemplate[]
+> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("license_templates")
+    .select(
+      `
+        code,
+        name,
+        description,
+        audio_format,
+        distribution_limit,
+        streams_limit,
+        digital_distribution_allowed,
+        monetization_allowed,
+        project_files_included,
+        music_video_allowed,
+        radio_allowed,
+        paid_performances_allowed,
+        exclusive,
+        sort_order
+      `,
+    )
+    .eq("active", true)
+    .order("sort_order", {
+      ascending: true,
+    });
+
+  if (error) {
+    console.error(
+      "No se pudieron cargar las plantillas de licencias:",
+      error.message,
+    );
+
+    return [];
+  }
+
+  return (data ?? []) as LicenseTemplate[];
+}
+
 async function getBeat(
   identifier: string,
 ): Promise<PublicBeat | null> {
   const supabase = await createClient();
 
-console.log("Buscando beat:", identifier);
+  console.log("Buscando beat:", identifier);
 
   if (isUuid(identifier)) {
-    const { data: beatById, error: idError } =
-      await supabase
-        .from("beats")
-        .select(beatSelection)
-        .eq("id", identifier)
-        .eq("status", "published")
-        .maybeSingle();
+    const {
+      data: beatById,
+      error: idError,
+    } = await supabase
+      .from("beats")
+      .select(beatSelection)
+      .eq("id", identifier)
+      .eq("status", "published")
+      .maybeSingle();
 
     if (idError) {
       console.error(
@@ -134,24 +328,23 @@ console.log("Buscando beat:", identifier);
       );
     }
 
-const { data } = await supabase
-  .from("beats")
-  .select("id,title,slug,status");
+    const normalizedBeat =
+      normalizeBeatResult(beatById);
 
-console.log("Todos los beats:", data);
-    if (beatById) {
-      
-      return beatById as PublicBeat;
+    if (normalizedBeat) {
+      return normalizedBeat;
     }
   }
 
-  const { data: beatBySlug, error: slugError } =
-    await supabase
-      .from("beats")
-      .select(beatSelection)
-      .eq("slug", identifier)
-      .eq("status", "published")
-      .maybeSingle();
+  const {
+    data: beatBySlug,
+    error: slugError,
+  } = await supabase
+    .from("beats")
+    .select(beatSelection)
+    .eq("slug", identifier)
+    .eq("status", "published")
+    .maybeSingle();
 
   if (slugError) {
     console.error(
@@ -160,19 +353,24 @@ console.log("Todos los beats:", data);
     );
   }
 
-  if (beatBySlug) {
-    return beatBySlug as PublicBeat;
+  const normalizedSlugBeat =
+    normalizeBeatResult(beatBySlug);
+
+  if (normalizedSlugBeat) {
+    return normalizedSlugBeat;
   }
 
   /*
    * Respaldo para beats antiguos que todavía
-   * no tienen slug guardado en Supabase.
+   * no tienen slug guardado.
    */
-  const { data: publishedBeats, error: fallbackError } =
-    await supabase
-      .from("beats")
-      .select(beatSelection)
-      .eq("status", "published");
+  const {
+    data: publishedBeats,
+    error: fallbackError,
+  } = await supabase
+    .from("beats")
+    .select(beatSelection)
+    .eq("status", "published");
 
   if (fallbackError) {
     console.error(
@@ -183,24 +381,41 @@ console.log("Todos los beats:", data);
     return null;
   }
 
-  const matchedBeat = (
-    (publishedBeats as PublicBeat[] | null) ?? []
-  ).find(
-    (beat) =>
-      createSlug(beat.title) === identifier,
-  );
+  const normalizedBeats = (
+    (publishedBeats ?? []) as unknown[]
+  )
+    .map(normalizeBeatResult)
+    .filter(
+      (beat): beat is PublicBeat =>
+        beat !== null,
+    );
 
-  return matchedBeat ?? null;
+  return (
+    normalizedBeats.find(
+      (beat) =>
+        createSlug(beat.title) === identifier,
+    ) ?? null
+  );
 }
 
 async function getRelatedBeats(
   currentBeat: PublicBeat,
 ): Promise<RelatedBeat[]> {
+  if (
+    !isUuid(currentBeat.id) ||
+    typeof currentBeat.genre !== "string" ||
+    !currentBeat.genre.trim()
+  ) {
+    console.error(
+      "No se pueden cargar beats relacionados porque el beat es inválido:",
+      currentBeat,
+    );
+
+    return [];
+  }
+
   const supabase = await createClient();
 
-  /*
-   * Primero buscamos beats publicados del mismo género.
-   */
   const {
     data: sameGenreData,
     error: sameGenreError,
@@ -225,29 +440,20 @@ async function getRelatedBeats(
   const sameGenreBeats =
     (sameGenreData as RelatedBeat[] | null) ?? [];
 
-  /*
-   * Si ya tenemos tres resultados, no necesitamos
-   * realizar otra consulta.
-   */
   if (sameGenreBeats.length >= 3) {
     return sameGenreBeats.slice(0, 3);
   }
 
-  /*
-   * Excluimos el beat actual y los beats que ya encontramos.
-   */
   const excludedIds = [
     currentBeat.id,
-    ...sameGenreBeats.map((beat) => beat.id),
+    ...sameGenreBeats
+      .map((beat) => beat.id)
+      .filter(isUuid),
   ];
 
   const remainingAmount =
     3 - sameGenreBeats.length;
 
-  /*
-   * Completamos los espacios disponibles con otros
-   * beats publicados del catálogo.
-   */
   const {
     data: additionalData,
     error: additionalError,
@@ -312,10 +518,12 @@ export async function generateMetadata({
   return {
     title: `${beat.title} | Kevin The Beatmaker`,
     description,
+
     openGraph: {
       title: `${beat.title} | Kevin The Beatmaker`,
       description,
       type: "music.song",
+
       images: beat.cover_url
         ? [
             {
@@ -332,15 +540,21 @@ export default async function BeatPage({
   params,
 }: BeatPageProps) {
   const { slug } = await params;
-
   const beat = await getBeat(slug);
 
   if (!beat) {
     notFound();
   }
 
-  const relatedBeats =
-    await getRelatedBeats(beat);
+  /*
+   * Cargamos simultáneamente los beats
+   * relacionados y las plantillas oficiales.
+   */
+  const [relatedBeats, licenseTemplates] =
+    await Promise.all([
+      getRelatedBeats(beat),
+      getLicenseTemplates(),
+    ]);
 
   const visualStyle = getBeatVisualStyle(
     beat.genre,
@@ -350,13 +564,86 @@ export default async function BeatPage({
   const bpm = Number(beat.bpm) || 0;
   const plays = Number(beat.plays) || 0;
 
+  /*
+   * Creamos un mapa para encontrar rápidamente
+   * la plantilla Básica, Premium o Exclusiva.
+   */
+  const templatesByCode = new Map<
+    LicenseCode,
+    LicenseTemplate
+  >(
+    licenseTemplates.map((template) => [
+      template.code,
+      template,
+    ]),
+  );
+
+  /*
+   * Conservamos el ID y precio específico de
+   * beat_licenses para no romper el carrito.
+   *
+   * Los permisos, formatos y descripciones
+   * se toman de license_templates.
+   */
   const licenses = [
     ...(beat.beat_licenses ?? []),
-  ].sort(
-    (firstLicense, secondLicense) =>
-      firstLicense.position -
-      secondLicense.position,
-  );
+  ]
+    .map((license): BeatLicense => {
+      const code = getLicenseCode(
+        license.name,
+        license.exclusive,
+      );
+
+      const template =
+        templatesByCode.get(code);
+
+      if (!template) {
+        return license;
+      }
+
+      return {
+        ...license,
+
+        id: license.id,
+        price: license.price,
+
+        name: template.name,
+        description: template.description,
+        audio_format: template.audio_format,
+
+        distribution_limit:
+          template.distribution_limit,
+
+        streams_limit:
+          template.streams_limit,
+
+        digital_distribution_allowed:
+          template.digital_distribution_allowed,
+
+        monetization_allowed:
+          template.monetization_allowed,
+
+        project_files_included:
+          template.project_files_included,
+
+        music_video_allowed:
+          template.music_video_allowed,
+
+        radio_allowed:
+          template.radio_allowed,
+
+        paid_performances_allowed:
+          template.paid_performances_allowed,
+
+        exclusive: template.exclusive,
+        position: template.sort_order,
+      };
+    })
+    .sort(
+      (firstLicense, secondLicense) =>
+        firstLicense.position -
+        secondLicense.position,
+    );
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#030712]">
@@ -452,10 +739,10 @@ export default async function BeatPage({
               </h2>
 
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-400">
-                Beat de {beat.genre} producido por Kevin
-                The Beatmaker, preparado para artistas que
-                buscan identidad, potencia y calidad
-                profesional.
+                Beat de {beat.genre} producido por
+                Kevin The Beatmaker, preparado para
+                artistas que buscan identidad,
+                potencia y calidad profesional.
               </p>
 
               <div className="mt-9 grid grid-cols-2 gap-4 sm:grid-cols-4">
